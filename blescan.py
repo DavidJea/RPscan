@@ -181,7 +181,7 @@ def parse_events(sock, loop_count=100):
                                "MINOR":returnnumberpacket(pkt[report_pkt_offset -4: report_pkt_offset - 2]),\
                                "TXPWR":struct.unpack("b", pkt[report_pkt_offset -2]),\
                                "RSSI":struct.unpack("b", pkt[report_pkt_offset -1])}
-                    myFullList.append(Adstring)
+                    myFullList.append(pktlist)
                 done = True
     sock.setsockopt( bluez.SOL_HCI, bluez.HCI_FILTER, old_filter )
     return myFullList
