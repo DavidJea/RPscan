@@ -19,6 +19,7 @@ import os
 import sys
 import struct
 import bluetooth._bluetooth as bluez
+import time
 
 LE_META_EVENT = 0x3e
 LE_PUBLIC_ADDRESS=0x00
@@ -60,6 +61,12 @@ def returnstringpacket(pkt):
         myString +=  "%02x" %struct.unpack("B",c)[0]
     return myString 
 
+def returnstringpacket2(pkt):
+    myString = "";
+    for c in pkt:
+        myString +=  "%02x " %struct.unpack("B",c)[0]
+    return myString 
+    
 def printpacket(pkt):
     for c in pkt:
         sys.stdout.write("%02x " % struct.unpack("B",c)[0])
@@ -138,6 +145,7 @@ def parse_events(sock, loop_count=100):
                 i =0 
         elif event == LE_META_EVENT:
             subevent, = struct.unpack("B", pkt[3])
+            pkt2 = pkt
             pkt = pkt[4:]
             if subevent == EVT_LE_CONN_COMPLETE:
                 le_handle_connection_complete(pkt)
@@ -175,13 +183,19 @@ def parse_events(sock, loop_count=100):
 
                     # #print "\tAdstring=", Adstring
                     # myFullList.append(Adstring)
-                    pktlist = {"MAC":packed_bdaddr_to_string(pkt[report_pkt_offset + 3:report_pkt_offset + 9]),\
-                               "UUID":returnstringpacket(pkt[report_pkt_offset -22: report_pkt_offset - 6]),\
-                               "MAJOR":returnnumberpacket(pkt[report_pkt_offset -6: report_pkt_offset - 4]),\
-                               "MINOR":returnnumberpacket(pkt[report_pkt_offset -4: report_pkt_offset - 2]),\
-                               "TXPWR":struct.unpack("b", pkt[report_pkt_offset -2]),\
-                               "RSSI":struct.unpack("b", pkt[report_pkt_offset -1])}
-                    myFullList.append(pktlist)
+
+                    if returnstringpacket(pkt[report_pkt_offset +10: report_pkt_offset +12]) == "0201":
+                        pktlist = {"LEN":len(pkt),\
+                                   #"PKT":returnstringpacket2(pkt2),\
+                                   #"L":returnstringpacket(pkt[report_pkt_offset +9: report_pkt_offset +10]),\
+                                   "MAC":packed_bdaddr_to_string(pkt[report_pkt_offset + 3:report_pkt_offset + 9]),\
+                                   "UUID":returnstringpacket(pkt[report_pkt_offset -22: report_pkt_offset - 6]),\
+                                   "MAJOR":returnnumberpacket(pkt[report_pkt_offset -6: report_pkt_offset - 4]),\
+                                   "MINOR":returnnumberpacket(pkt[report_pkt_offset -4: report_pkt_offset - 2]),\
+                                   "TXPWR":struct.unpack("b", pkt[report_pkt_offset -2]),\
+                                   "RSSI":struct.unpack("b", pkt[report_pkt_offset -1]),\
+                                   "TS":time.time()}
+                        myFullList.append(pktlist)
                 done = True
     sock.setsockopt( bluez.SOL_HCI, bluez.HCI_FILTER, old_filter )
     return myFullList
